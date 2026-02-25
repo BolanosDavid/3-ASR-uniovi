@@ -1,0 +1,4 @@
+---
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+web_title: "ASR Lab - Azure Infrastructure"
+web_subtitle: "Deployed with Terraform + Ansible"

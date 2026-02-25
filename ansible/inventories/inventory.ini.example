@@ -1,0 +1,2 @@
+[webservers]
+asr-vm01 ansible_host=X.X.X.X ansible_user=azureuser

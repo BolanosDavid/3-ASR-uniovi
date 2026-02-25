@@ -1,0 +1,5 @@
+---
+- name: Base system configuration
+  hosts: webservers
+  roles:
+    - common

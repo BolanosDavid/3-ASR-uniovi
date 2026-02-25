@@ -1,0 +1,7 @@
+resource_group_name = "rg-asr-lab-01"
+location            = "westeurope"
+prefix              = "asr"
+vm_size             = "Standard_B1s"
+admin_username      = "azureuser"
+ssh_public_key_path = "~/.ssh/id_rsa.pub"
+allowed_ssh_cidr    = "0.0.0.0/0"
