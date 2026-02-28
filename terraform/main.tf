@@ -1,14 +1,17 @@
 locals {
   vnet_address_space = "10.10.0.0/16"
   subnet_prefix      = "10.10.1.0/24"
-  vm_name            = "${var.prefix}-vm01"
+  # Genera una lista de nombres de VM en función del prefijo y vm_count
+  vm_names           = [for i in range(var.vm_count) : format("%s-vm%02d", var.prefix, i + 1)]
 }
 
+# Grupo de recursos compartido
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
   location = var.location
 }
 
+# Red virtual y subred compartidas
 resource "azurerm_virtual_network" "main" {
   name                = "${var.prefix}-vnet"
   location            = azurerm_resource_group.main.location
@@ -23,6 +26,7 @@ resource "azurerm_subnet" "main" {
   address_prefixes     = [local.subnet_prefix]
 }
 
+# NSG con reglas para SSH y HTTP
 resource "azurerm_network_security_group" "main" {
   name                = "${var.prefix}-nsg"
   location            = azurerm_resource_group.main.location
@@ -53,21 +57,26 @@ resource "azurerm_network_security_group" "main" {
   }
 }
 
+# Asociar NSG a la subred
 resource "azurerm_subnet_network_security_group_association" "main" {
   subnet_id                 = azurerm_subnet.main.id
   network_security_group_id = azurerm_network_security_group.main.id
 }
 
-resource "azurerm_public_ip" "main" {
-  name                = "${var.prefix}-pip"
+# Crear una IP pública por VM
+resource "azurerm_public_ip" "vm" {
+  for_each            = toset(local.vm_names)
+  name                = "${each.value}-pip"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   allocation_method   = "Static"
   sku                 = "Standard"
 }
 
-resource "azurerm_network_interface" "main" {
-  name                = "${var.prefix}-nic"
+# Crear una NIC por VM y asociar la IP pública
+resource "azurerm_network_interface" "vm" {
+  for_each            = toset(local.vm_names)
+  name                = "${each.value}-nic"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
 
@@ -75,17 +84,19 @@ resource "azurerm_network_interface" "main" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.main.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.main.id
+    public_ip_address_id          = azurerm_public_ip.vm[each.value].id
   }
 }
 
-resource "azurerm_linux_virtual_machine" "main" {
-  name                            = local.vm_name
+# Definir una VM Linux por nombre en la lista
+resource "azurerm_linux_virtual_machine" "vm" {
+  for_each                        = toset(local.vm_names)
+  name                            = each.value
   location                        = azurerm_resource_group.main.location
   resource_group_name             = azurerm_resource_group.main.name
   size                            = var.vm_size
   admin_username                  = var.admin_username
-  network_interface_ids           = [azurerm_network_interface.main.id]
+  network_interface_ids           = [azurerm_network_interface.vm[each.value].id]
   disable_password_authentication = true
 
   admin_ssh_key {

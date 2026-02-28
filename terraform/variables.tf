@@ -32,3 +32,9 @@ variable "allowed_ssh_cidr" {
   type        = string
   description = "CIDR allowed for SSH access"
 }
+
+variable "vm_count" {
+  type        = number
+  description = "Number of virtual machines to deploy"
+  default     = 3
+}
