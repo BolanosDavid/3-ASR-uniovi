@@ -9,21 +9,24 @@ cd "$PROJECT_ROOT/terraform"
 
 echo "==> Extracting outputs from Terraform..."
 
-PUBLIC_IP=$(terraform output -raw public_ip)
-VM_NAME=$(terraform output -raw vm_name)
+PUBLIC_IPS_JSON=$(terraform output -json public_ips)
 ADMIN_USER=$(terraform output -raw admin_username)
 
-if [ -z "$PUBLIC_IP" ]; then
-    echo "ERROR: Could not get public IP from Terraform outputs"
+if [ -z "$PUBLIC_IPS_JSON" ] || [ -z "$ADMIN_USER" ]; then
+    echo "ERROR: Could not get outputs from Terraform"
     exit 1
 fi
 
 mkdir -p "$INVENTORY_DIR"
 
-cat > "$INVENTORY_FILE" <<EOF
+# Cabecera del grupo
+cat > "$INVENTORY_FILE" <<'EOL'
 [webservers]
-$VM_NAME ansible_host=$PUBLIC_IP ansible_user=$ADMIN_USER
-EOF
+EOL
+
+# Escribir una línea por host a partir del mapa JSON
+# Ejemplo: asr-vm01 ansible_host=1.2.3.4 ansible_user=azureuser
+echo "$PUBLIC_IPS_JSON" | jq -r --arg user "$ADMIN_USER" 'to_entries[] | "\(.key) ansible_host=\(.value) ansible_user=\($user)"' >> "$INVENTORY_FILE"
 
 echo ""
 echo "✓ Inventory generated at: $INVENTORY_FILE"
