@@ -1,18 +1,22 @@
-output "resource_group_name" {
-  value       = azurerm_resource_group.main.name
-  description = "Resource Group name"
+# Lista de nombres de VM
+autput "vm_names" {
+  value       = local.vm_names
+  description = "List of virtual machine names"
 }
 
-output "public_ip" {
-  value       = azurerm_public_ip.main.ip_address
-  description = "Public IP address"
+# Mapa de IPs públicas (vm_name => IP)
+output "public_ips" {
+  value       = { for name, pip in azurerm_public_ip.vm : name => pip.ip_address }
+  description = "Public IP address for each VM (keyed by VM name)"
 }
 
-output "vm_name" {
-  value       = azurerm_linux_virtual_machine.main.name
-  description = "Virtual Machine name"
+# Mapa de IPs privadas (vm_name => IP privada)
+output "private_ips" {
+  value       = { for name, nic in azurerm_network_interface.vm : name => nic.private_ip_address }
+  description = "Private IP address for each VM (keyed by VM name)"
 }
 
+# Usuario administrador de SSH
 output "admin_username" {
   value       = var.admin_username
   description = "VM admin username"
