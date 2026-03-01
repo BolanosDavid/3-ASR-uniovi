@@ -13,7 +13,6 @@ KEY_PRIVATE="$HOME/.ssh/$ASR_KEY_NAME"
 KEY_PUBLIC="$KEY_PRIVATE.pub"
 TFVARS_FILE="$TF_DIR/terraform.tfvars"
 TFVARS_EXAMPLE="$TF_DIR/terraform.tfvars.example"
-AUTO_DETECT_SSH_CIDR="${AUTO_DETECT_SSH_CIDR:-1}"
 SSH_READY_ATTEMPTS="${SSH_READY_ATTEMPTS:-30}"
 SSH_READY_SLEEP="${SSH_READY_SLEEP:-5}"
 
@@ -59,7 +58,6 @@ require_cmd ssh-keygen
 require_cmd terraform
 require_cmd jq
 require_cmd ansible-playbook
-require_cmd curl
 require_cmd timeout
 
 mkdir -p "$HOME/.ssh"
@@ -94,17 +92,6 @@ if [ ! -f "$TFVARS_FILE" ]; then
 fi
 
 replace_or_append_tfvar "ssh_public_key_path" "\"~/.ssh/${ASR_KEY_NAME}.pub\""
-
-if [ "$AUTO_DETECT_SSH_CIDR" = "1" ]; then
-  echo "==> Detecting current public IP for SSH access..."
-  PUBLIC_IP="$(curl -fsS https://api.ipify.org || true)"
-  if [ -n "$PUBLIC_IP" ]; then
-    replace_or_append_tfvar "allowed_ssh_cidr" "\"${PUBLIC_IP}/32\""
-    echo "✓ allowed_ssh_cidr set to ${PUBLIC_IP}/32"
-  else
-    echo "WARNING: Could not detect public IP automatically. Keeping existing allowed_ssh_cidr."
-  fi
-fi
 
 echo "==> Terraform init..."
 terraform -chdir="$TF_DIR" init
