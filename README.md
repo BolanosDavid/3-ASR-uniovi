@@ -4,7 +4,7 @@ Proyecto de automatización de infraestructura en Azure utilizando Terraform y A
 
 ## Descripción
 
-Implementación de infraestructura como código (IaC) que despliega y configura una máquina virtual Linux en Azure.
+Implementación de infraestructura como código (IaC) que despliega y configura máquinas virtuales Linux en Azure.
 
 **Componentes:**
 - **Terraform**: Aprovisionamiento de recursos en Azure
@@ -43,19 +43,6 @@ cp terraform/terraform.tfvars.example terraform/terraform.tfvars
 ./scripts/verify-deployment.sh
 ```
 
-## Documentación
-
-Consulta [GUIDE.md](GUIDE.md) para instrucciones detalladas y explicaciones técnicas.
-
-## Estructura
-
-```
-.
-├── terraform/          # Definición de infraestructura
-├── ansible/            # Playbooks y roles de configuración
-├── scripts/            # Scripts de automatización
-└── GUIDE.md           # Guía detallada
-```
 
 ## Limpieza
 
@@ -66,4 +53,6 @@ terraform destroy
 
 ## Autores
 
-Trabajo grupal - Administración de Sistemas y Redes - Universidad de Oviedo
+* [Angela Nistal Guerrero @UO301919](https://github.com/AngelaNistal) 
+* [Sara Naredo Fernandez @UO300563](https://github.com/saranaredo)
+* [David Fernando Bolaños Lopez @UO302313](https://github.com/BolanosDavid)
