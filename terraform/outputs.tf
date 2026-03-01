@@ -1,5 +1,5 @@
 # Lista de nombres de VM
-autput "vm_names" {
+output "vm_names" {
   value       = local.vm_names
   description = "List of virtual machine names"
 }
