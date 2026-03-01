@@ -1,8 +1,13 @@
 locals {
   vnet_address_space = "10.10.0.0/16"
   subnet_prefix      = "10.10.1.0/24"
+
   # Genera una lista de nombres de VM en función del prefijo y vm_count
-  vm_names           = [for i in range(var.vm_count) : format("%s-vm%02d", var.prefix, i + 1)]
+  vm_names = [for i in range(var.vm_count) : format("%s-vm%02d", var.prefix, i + 1)]
+
+  # Expande rutas del tipo ~/.ssh/id_rsa.pub al HOME del usuario actual
+  ssh_public_key_path_resolved = pathexpand(var.ssh_public_key_path)
+  ssh_public_key_content = trimspace(file(local.ssh_public_key_path_resolved))
 }
 
 # Grupo de recursos compartido
@@ -101,7 +106,14 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
   admin_ssh_key {
     username   = var.admin_username
-    public_key = file(var.ssh_public_key_path)
+    public_key = local.ssh_public_key_content
+  }
+
+  lifecycle {
+    precondition {
+      condition     = startswith(local.ssh_public_key_content, "ssh-rsa ")
+      error_message = "The SSH public key must be RSA (ssh-rsa). Update ssh_public_key_path to point to a valid RSA public key."
+    }
   }
 
   os_disk {
