@@ -17,3 +17,12 @@ scrape_configs:
           job: varlogs
           host: {{ inventory_hostname }}
           __path__: /var/log/*.log
+  - job_name: journal
+    journal:
+      max_age: 12h
+      labels:
+        job: systemd-journal
+        host: {{ inventory_hostname }}
+    relabel_configs:
+      - source_labels: [ '__journal__systemd_unit' ]
+        target_label: unit

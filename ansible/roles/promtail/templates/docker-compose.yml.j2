@@ -3,7 +3,10 @@ services:
     image: grafana/promtail:latest
     container_name: promtail
     restart: unless-stopped
+    user: root
     command: -config.file=/etc/promtail/config.yml
     volumes:
       - ./config/promtail-config.yml:/etc/promtail/config.yml:ro
       - /var/log:/var/log:ro
+      - /run/log/journal:/run/log/journal:ro
+      - /etc/machine-id:/etc/machine-id:ro

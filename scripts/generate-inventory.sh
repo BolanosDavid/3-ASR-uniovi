@@ -1,16 +1,22 @@
-#!/bin/bash
-set -e
+set -euo pipefail
 
-PROJECT_ROOT="$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+TF_DIR="$PROJECT_ROOT/terraform"
 INVENTORY_DIR="$PROJECT_ROOT/ansible/inventories/generated"
 INVENTORY_FILE="$INVENTORY_DIR/inventory.ini"
 
-cd "$PROJECT_ROOT/terraform"
+# Base IP for the WireGuard overlay network (10.8.0.0/24).
+# Each host gets 10.8.0.<index+1> assigned sequentially in sorted order.
+WG_BASE="10.8.0"
 
+echo "==> Project root: $PROJECT_ROOT"
+echo "==> Terraform dir: $TF_DIR"
+echo "==> Inventory file: $INVENTORY_FILE"
 echo "==> Extracting outputs from Terraform..."
 
-PUBLIC_IPS_JSON=$(terraform output -json public_ips)
-ADMIN_USER=$(terraform output -raw admin_username)
+PUBLIC_IPS_JSON="$(terraform -chdir="$TF_DIR" output -json public_ips)"
+ADMIN_USER="$(terraform -chdir="$TF_DIR" output -raw admin_username)"
 
 if [ -z "$PUBLIC_IPS_JSON" ] || [ -z "$ADMIN_USER" ]; then
     echo "ERROR: Could not get outputs from Terraform"
@@ -18,15 +24,6 @@ if [ -z "$PUBLIC_IPS_JSON" ] || [ -z "$ADMIN_USER" ]; then
 fi
 
 mkdir -p "$INVENTORY_DIR"
-
-# Cabecera del grupo
-cat > "$INVENTORY_FILE" <<'EOL'
-[webservers]
-EOL
-
-# Base IP for the WireGuard overlay network (10.8.0.0/24).
-# Each host gets 10.8.0.<index+1> assigned sequentially in sorted order.
-WG_BASE="10.8.0"
 
 {
     echo "[webservers]"
@@ -40,3 +37,8 @@ WG_BASE="10.8.0"
     done < <(echo "$PUBLIC_IPS_JSON" | jq -r --arg user "$ADMIN_USER" \
       'to_entries | sort_by(.key) | .[] | "\(.key) ansible_host=\(.value) ansible_user=\($user)"')
 } > "$INVENTORY_FILE"
+
+echo ""
+echo "✓ Inventory generated at: $INVENTORY_FILE"
+echo ""
+cat "$INVENTORY_FILE"
