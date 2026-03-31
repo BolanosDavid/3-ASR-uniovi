@@ -1,0 +1,28 @@
+---
+- name: Ensure promtail directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /opt/observability/promtail
+    - /opt/observability/promtail/config
+
+- name: Deploy promtail configuration
+  ansible.builtin.template:
+    src: promtail-config.yml.j2
+    dest: /opt/observability/promtail/config/promtail-config.yml
+    mode: '0644'
+
+- name: Deploy promtail docker-compose definition
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/observability/promtail/docker-compose.yml
+    mode: '0644'
+
+- name: Start promtail stack
+  ansible.builtin.command: docker compose up -d
+  args:
+    chdir: /opt/observability/promtail
+  register: promtail_compose_up
+  changed_when: "'Creating' in promtail_compose_up.stdout or 'Recreating' in promtail_compose_up.stdout or 'Starting' in promtail_compose_up.stdout"
