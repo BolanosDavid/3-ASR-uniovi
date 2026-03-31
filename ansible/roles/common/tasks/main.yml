@@ -1,11 +1,11 @@
 ---
 - name: Update apt cache
-  apt:
+  ansible.builtin.apt:
     update_cache: yes
     cache_valid_time: 3600
 
 - name: Install base packages
-  apt:
+  ansible.builtin.apt:
     name:
       - curl
       - wget
@@ -14,15 +14,16 @@
       - ufw
     state: present
 
-- name: Configure firewall
-  ufw:
+- name: Configure firewall rules
+  ansible.builtin.ufw:
     rule: allow
-    port: "{{ item }}"
-    proto: tcp
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
   loop:
-    - '22'
-    - '80'
+    - { port: '22', proto: 'tcp' }
+    - { port: '80', proto: 'tcp' }
+    - { port: '51820', proto: 'udp' }
 
 - name: Enable firewall
-  ufw:
+  ansible.builtin.ufw:
     state: enabled
