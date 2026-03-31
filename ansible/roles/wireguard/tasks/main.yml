@@ -1,0 +1,84 @@
+---
+- name: Install WireGuard packages
+  ansible.builtin.apt:
+    name:
+      - wireguard
+      - wireguard-tools
+    state: present
+    update_cache: true
+
+- name: Enable IPv4 forwarding
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    state: present
+    reload: true
+
+- name: Ensure WireGuard configuration directory exists
+  ansible.builtin.file:
+    path: /etc/wireguard
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Check private key file
+  ansible.builtin.stat:
+    path: /etc/wireguard/privatekey
+  register: wireguard_private_key_file_stat
+
+- name: Generate private key if it does not exist
+  ansible.builtin.command: wg genkey
+  register: wg_private_key_cmd
+  changed_when: wg_private_key_cmd.rc == 0
+  when: not wireguard_private_key_file_stat.stat.exists
+
+- name: Persist private key securely
+  ansible.builtin.copy:
+    dest: /etc/wireguard/privatekey
+    content: "{{ wg_private_key_cmd.stdout }}\n"
+    owner: root
+    group: root
+    mode: '0600'
+  when: not wireguard_private_key_file_stat.stat.exists
+
+- name: Generate public key from local private key
+  ansible.builtin.shell: |
+    set -o pipefail
+    wg pubkey < /etc/wireguard/privatekey > /etc/wireguard/publickey
+  args:
+    executable: /bin/bash
+    creates: /etc/wireguard/publickey
+
+- name: Read private key for configuration rendering
+  ansible.builtin.slurp:
+    src: /etc/wireguard/privatekey
+  register: wireguard_private_key_b64
+
+- name: Publish WireGuard private key as transient fact
+  ansible.builtin.set_fact:
+    wireguard_private_key: "{{ wireguard_private_key_b64.content | b64decode | trim }}"
+
+- name: Read public key for peer distribution
+  ansible.builtin.slurp:
+    src: /etc/wireguard/publickey
+  register: wireguard_public_key_b64
+
+- name: Publish WireGuard public key as fact
+  ansible.builtin.set_fact:
+    wireguard_public_key: "{{ wireguard_public_key_b64.content | b64decode | trim }}"
+
+- name: Render wg0 interface configuration
+  ansible.builtin.template:
+    src: wg0.conf.j2
+    dest: /etc/wireguard/wg0.conf
+    owner: root
+    group: root
+    mode: '0600'
+  notify: restart wireguard
+
+- name: Ensure WireGuard service is enabled and running
+  ansible.builtin.systemd:
+    name: wg-quick@wg0
+    state: started
+    enabled: true
