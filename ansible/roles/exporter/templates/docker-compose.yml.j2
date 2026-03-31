@@ -1,0 +1,12 @@
+services:
+  exporter:
+    image: prom/exporter:latest
+    container_name: exporter
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "{{ wg_overlay_ip }}:9100:9100"

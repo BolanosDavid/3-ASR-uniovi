@@ -1,0 +1,26 @@
+---
+- name: Ensure exporter compose directory exists
+  ansible.builtin.file:
+    path: /opt/observability/exporter
+    state: directory
+    mode: '0755'
+
+- name: Deploy exporter docker-compose definition
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/observability/exporter/docker-compose.yml
+    mode: '0644'
+
+- name: Allow exporter only from WireGuard network
+  ansible.builtin.ufw:
+    rule: allow
+    proto: tcp
+    from_ip: 10.8.0.0/24
+    to_port: '9100'
+
+- name: Start exporter stack
+  ansible.builtin.command: docker compose up -d
+  args:
+    chdir: /opt/observability/exporter
+  register: exporter_compose_up
+  changed_when: "'Creating' in exporter_compose_up.stdout or 'Recreating' in exporter_compose_up.stdout or 'Starting' in exporter_compose_up.stdout"
