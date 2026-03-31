@@ -26,7 +26,7 @@ resource "azurerm_subnet" "main" {
   address_prefixes     = [local.subnet_prefix]
 }
 
-# NSG con reglas para SSH y HTTP
+# NSG con reglas para SSH, HTTP, WireGuard y scrapping
 resource "azurerm_network_security_group" "main" {
   name                = "${var.prefix}-nsg"
   location            = azurerm_resource_group.main.location
@@ -53,6 +53,34 @@ resource "azurerm_network_security_group" "main" {
     source_port_range          = "*"
     destination_port_range     = "80"
     source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  # Allow inbound UDP traffic on port 51820 from any source.
+  # Required for WireGuard peers to establish the encrypted tunnel
+  # across the public internet before the overlay network is up.
+  security_rule {
+    name                       = "allow-wireguard"
+    priority                   = 120
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Udp"
+    source_port_range          = "*"
+    destination_port_range     = "51820"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  # Restrict observability services (Prometheus, Grafana, Loki, node_exporter)
+  # to traffic originating from the WireGuard overlay network (10.8.0.0/24) only.
+  # These ports should never be reachable from the public internet directly.
+  security_rule {
+    name                       = "allow-observability-over-wireguard"
+    priority                   = 130
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = ["9090","3000","3100","9100"]
+    source_address_prefix      = "10.8.0.0/24"
     destination_address_prefix = "*"
   }
 }

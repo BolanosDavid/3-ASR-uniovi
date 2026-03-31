@@ -1,4 +1,14 @@
 ---
+# Global Ansible vars for all hosts
 ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+# Web vars
 web_title: "ASR Lab - Azure Infrastructure"
 web_subtitle: "Deployed with Terraform + Ansible"
+# Wireguard red overlay and listening port
+wireguard_network_cidr: "10.8.0.0/24"
+wireguard_port: 51820
+# Observability hosts
+prometheus_host: "vm-asr-01"
+grafana_host: "vm-asr-01"
+loki_host: "vm-asr-03"
+loki_overlay_endpoint: "{{ hostvars[loki_host]['wg_overlay_ip'] }}:3100"

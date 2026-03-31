@@ -24,11 +24,19 @@ cat > "$INVENTORY_FILE" <<'EOL'
 [webservers]
 EOL
 
-# Escribir una línea por host a partir del mapa JSON
-# Ejemplo: asr-vm01 ansible_host=1.2.3.4 ansible_user=azureuser
-echo "$PUBLIC_IPS_JSON" | jq -r --arg user "$ADMIN_USER" 'to_entries[] | "\(.key) ansible_host=\(.value) ansible_user=\($user)"' >> "$INVENTORY_FILE"
+# Base IP for the WireGuard overlay network (10.8.0.0/24).
+# Each host gets 10.8.0.<index+1> assigned sequentially in sorted order.
+WG_BASE="10.8.0"
 
-echo ""
-echo "✓ Inventory generated at: $INVENTORY_FILE"
-echo ""
-cat "$INVENTORY_FILE"
+{
+    echo "[webservers]"
+    # Sort hosts by name so WireGuard IP assignment is deterministic regardless
+    # of the order Terraform returns them. Each host receives wg_overlay_ip
+    # as a host variable so Ansible roles never need to hardcode IP mappings.
+    index=1
+    while IFS= read -r line; do
+        echo "$line wg_overlay_ip=${WG_BASE}.${index}"
+        index=$((index + 1))
+    done < <(echo "$PUBLIC_IPS_JSON" | jq -r --arg user "$ADMIN_USER" \
+      'to_entries | sort_by(.key) | .[] | "\(.key) ansible_host=\(.value) ansible_user=\($user)"')
+} > "$INVENTORY_FILE"
