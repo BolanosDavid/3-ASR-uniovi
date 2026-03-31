@@ -6,7 +6,7 @@
     - common
     - wireguard
     - docker
-    - node_exporter
+    - exporter
     - prometheus
     - grafana
     - loki
