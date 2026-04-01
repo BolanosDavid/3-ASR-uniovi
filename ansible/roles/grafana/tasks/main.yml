@@ -13,6 +13,19 @@
         - /opt/observability/grafana/provisioning/dashboards
         - /opt/observability/grafana/dashboards
 
+    - name: Fix grafana directories permissions
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "472"
+        group: "472"
+        mode: '0755'
+      loop:
+        - /opt/observability/grafana/provisioning
+        - /opt/observability/grafana/provisioning/datasources
+        - /opt/observability/grafana/provisioning/dashboards
+        - /opt/observability/grafana/dashboards
+
     - name: Deploy grafana datasource provisioning
       ansible.builtin.template:
         src: datasource.yml.j2

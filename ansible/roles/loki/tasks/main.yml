@@ -12,6 +12,14 @@
         - /opt/observability/loki/config
         - /opt/observability/loki/data
 
+    - name: Fix loki data directory permissions
+      ansible.builtin.file:
+        path: /opt/observability/loki/data
+        state: directory
+        owner: "10001"
+        group: "10001"
+        mode: '0755'
+
     - name: Deploy loki configuration
       ansible.builtin.template:
         src: loki-config.yml.j2

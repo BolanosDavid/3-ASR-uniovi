@@ -12,6 +12,14 @@
         - /opt/observability/prometheus/config
         - /opt/observability/prometheus/data
 
+    - name: Fix prometheus data directory permissions
+      ansible.builtin.file:
+        path: /opt/observability/prometheus/data
+        state: directory
+        owner: "65534"
+        group: "65534"
+        mode: '0755'
+
     - name: Deploy prometheus configuration
       ansible.builtin.template:
         src: prometheus.yml.j2
