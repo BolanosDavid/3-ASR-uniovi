@@ -8,7 +8,7 @@ web_subtitle: "Deployed with Terraform + Ansible"
 wireguard_network_cidr: "10.8.0.0/24"
 wireguard_port: 51820
 # Observability hosts
-prometheus_host: "vm-asr-01"
-grafana_host: "vm-asr-01"
-loki_host: "vm-asr-03"
+prometheus_host: "asr-vm01"
+grafana_host: "asr-vm02"
+loki_host: "asr-vm03"
 loki_overlay_endpoint: "{{ hostvars[loki_host]['wg_overlay_ip'] }}:3100"
