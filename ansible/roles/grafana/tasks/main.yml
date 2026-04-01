@@ -1,55 +1,55 @@
 ---
-- name: Skip grafana role on non-target hosts
-  ansible.builtin.meta: end_host
-  when: inventory_hostname != grafana_host
+- name: Run grafana tasks only on target host
+  when: inventory_hostname == grafana_host
+  block:
+    - name: Ensure grafana directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /opt/observability/grafana
+        - /opt/observability/grafana/provisioning/datasources
+        - /opt/observability/grafana/provisioning/dashboards
+        - /opt/observability/grafana/dashboards
 
-- name: Ensure grafana directories exit
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    mode: 0755
-  loop:
-    - /opt/observability/grafana
-    - /opt/observability/grafana/provisioning/datasources
-    - /opt/observability/grafana/provisioning/dashboards
-    - /opt/observability/grafana/dashboards
+    - name: Deploy grafana datasource provisioning
+      ansible.builtin.template:
+        src: datasource.yml.j2
+        dest: /opt/observability/grafana/provisioning/datasources/prometheus.yml
+        mode: '0644'
 
-- name: Deploy grafana datasource provisioning
-  ansible.builtin.template:
-      src: "datasource.yml.j2"
-      dest: /opt/observability/grafana/provisioning/datasources/prometheus.yml
-      mode: '0644'
-- name: Deploy grafana dashboard provider provisioning
-  ansible.builtin.template:
-    src: dashboard-provider.yml.j2
-    dest: /opt/observability/grafana/provisioning/dashboards/dashboard-provider.yml
-    mode: '0644'
+    - name: Deploy grafana dashboard provider provisioning
+      ansible.builtin.template:
+        src: dashboard-provider.yml.j2
+        dest: /opt/observability/grafana/provisioning/dashboards/dashboard-provider.yml
+        mode: '0644'
 
-- name: Deploy base system dashboard
-  ansible.builtin.template:
-    src: system-overview-dashboard.json.j2
-    dest: /opt/observability/grafana/dashboards/system-overview.json
-    mode: '0644'
+    - name: Deploy base system dashboard
+      ansible.builtin.template:
+        src: system-overview-dashboard.json.j2
+        dest: /opt/observability/grafana/dashboards/system-overview.json
+        mode: '0644'
 
-- name: Deploy grafana docker-compose definition
-  ansible.builtin.template:
-    src: docker-compose.yml.j2
-    dest: /opt/observability/grafana/docker-compose.yml
-    mode: '0644'
+    - name: Deploy grafana docker-compose definition
+      ansible.builtin.template:
+        src: docker-compose.yml.j2
+        dest: /opt/observability/grafana/docker-compose.yml
+        mode: '0644'
 
-- name: Allow grafana only from WireGuard network
-  ansible.builtin.ufw:
-    rule: allow
-    proto: tcp
-    from_ip: 10.8.0.0/24
-    to_port: '3000'
+    - name: Allow grafana only from WireGuard network
+      ansible.builtin.ufw:
+        rule: allow
+        proto: tcp
+        from_ip: 10.8.0.0/24
+        to_port: '3000'
 
-- name: Start grafana stack
-  ansible.builtin.command: docker compose up -d
-  args:
-    chdir: /opt/observability/grafana
-  register: compose_up
-  changed_when: >
-    'Creating' in (compose_up.stdout + compose_up.stderr) or
-    'Recreating' in (compose_up.stdout + compose_up.stderr) or
-    'Starting' in (compose_up.stdout + compose_up.stderr)
+    - name: Start grafana stack
+      ansible.builtin.command: docker compose up -d
+      args:
+        chdir: /opt/observability/grafana
+      register: compose_up
+      changed_when: >
+        'Creating' in (compose_up.stdout + compose_up.stderr) or
+        'Recreating' in (compose_up.stdout + compose_up.stderr) or
+        'Starting' in (compose_up.stdout + compose_up.stderr)

@@ -1,4 +1,8 @@
 ---
+- name: Resolve Loki overlay endpoint
+  ansible.builtin.set_fact:
+    loki_overlay_endpoint: "{{ hostvars[loki_host]['wg_overlay_ip'] }}:3100"
+
 - name: Ensure promtail directories exist
   ansible.builtin.file:
     path: "{{ item }}"

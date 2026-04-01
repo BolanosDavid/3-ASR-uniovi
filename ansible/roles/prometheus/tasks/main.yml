@@ -1,43 +1,42 @@
 ---
-- name: Skip prometheus role on non-target hosts
-  ansible.builtin.meta: end_host
-  when: inventory_hostname != prometheus_host
+- name: Run prometheus tasks only on target host
+  when: inventory_hostname == prometheus_host
+  block:
+    - name: Ensure prometheus directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /opt/observability/prometheus
+        - /opt/observability/prometheus/config
+        - /opt/observability/prometheus/data
 
-- name: Ensure prometheus directories exist
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    mode: '0755'
-  loop:
-    - /opt/observability/prometheus
-    - /opt/observability/prometheus/config
-    - /opt/observability/prometheus/data
+    - name: Deploy prometheus configuration
+      ansible.builtin.template:
+        src: prometheus.yml.j2
+        dest: /opt/observability/prometheus/config/prometheus.yml
+        mode: '0644'
 
-- name: Deploy prometheus configuration
-  ansible.builtin.template:
-    src: prometheus.yml.j2
-    dest: /opt/observability/prometheus/config/prometheus.yml
-    mode: '0644'
+    - name: Deploy prometheus docker-compose definition
+      ansible.builtin.template:
+        src: docker-compose.yml.j2
+        dest: /opt/observability/prometheus/docker-compose.yml
+        mode: '0644'
 
-- name: Deploy prometheus docker-compose definition
-  ansible.builtin.template:
-    src: docker-compose.yml.j2
-    dest: /opt/observability/prometheus/docker-compose.yml
-    mode: '0644'
+    - name: Allow prometheus only from WireGuard network
+      ansible.builtin.ufw:
+        rule: allow
+        proto: tcp
+        from_ip: 10.8.0.0/24
+        to_port: '9090'
 
-- name: Allow prometheus only from WireGuard network
-  ansible.builtin.ufw:
-    rule: allow
-    proto: tcp
-    from_ip: 10.8.0.0/24
-    to_port: '9090'
-
-- name: Start prometheus stack
-  ansible.builtin.command: docker compose up -d
-  args:
-    chdir: /opt/observability/prometheus
-  register: compose_up
-  changed_when: >
-    'Creating' in (compose_up.stdout + compose_up.stderr) or
-    'Recreating' in (compose_up.stdout + compose_up.stderr) or
-    'Starting' in (compose_up.stdout + compose_up.stderr)
+    - name: Start prometheus stack
+      ansible.builtin.command: docker compose up -d
+      args:
+        chdir: /opt/observability/prometheus
+      register: compose_up
+      changed_when: >
+        'Creating' in (compose_up.stdout + compose_up.stderr) or
+        'Recreating' in (compose_up.stdout + compose_up.stderr) or
+        'Starting' in (compose_up.stdout + compose_up.stderr)

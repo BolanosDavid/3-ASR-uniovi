@@ -11,4 +11,3 @@ wireguard_port: 51820
 prometheus_host: "asr-vm01"
 grafana_host: "asr-vm01"
 loki_host: "asr-vm03"
-loki_overlay_endpoint: "{{ hostvars[loki_host]['wg_overlay_ip'] }}:3100"

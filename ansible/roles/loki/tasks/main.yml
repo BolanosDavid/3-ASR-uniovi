@@ -1,43 +1,42 @@
 ---
-- name: Skip loki role on non-target hosts
-  ansible.builtin.meta: end_host
-  when: inventory_hostname != loki_host
+- name: Run loki tasks only on target host
+  when: inventory_hostname == loki_host
+  block:
+    - name: Ensure loki directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /opt/observability/loki
+        - /opt/observability/loki/config
+        - /opt/observability/loki/data
 
-- name: Ensure loki directories exist
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    mode: '0755'
-  loop:
-    - /opt/observability/loki
-    - /opt/observability/loki/config
-    - /opt/observability/loki/data
+    - name: Deploy loki configuration
+      ansible.builtin.template:
+        src: loki-config.yml.j2
+        dest: /opt/observability/loki/config/loki-config.yml
+        mode: '0644'
 
-- name: Deploy loki configuration
-  ansible.builtin.template:
-    src: loki-config.yml.j2
-    dest: /opt/observability/loki/config/loki-config.yml
-    mode: '0644'
+    - name: Deploy loki docker-compose definition
+      ansible.builtin.template:
+        src: docker-compose.yml.j2
+        dest: /opt/observability/loki/docker-compose.yml
+        mode: '0644'
 
-- name: Deploy loki docker-compose definition
-  ansible.builtin.template:
-    src: docker-compose.yml.j2
-    dest: /opt/observability/loki/docker-compose.yml
-    mode: '0644'
+    - name: Allow loki only from WireGuard network
+      ansible.builtin.ufw:
+        rule: allow
+        proto: tcp
+        from_ip: 10.8.0.0/24
+        to_port: '3100'
 
-- name: Allow loki only from WireGuard network
-  ansible.builtin.ufw:
-    rule: allow
-    proto: tcp
-    from_ip: 10.8.0.0/24
-    to_port: '3100'
-
-- name: Start loki stack
-  ansible.builtin.command: docker compose up -d
-  args:
-    chdir: /opt/observability/loki
-  register: compose_up
-  changed_when: >
-    'Creating' in (compose_up.stdout + compose_up.stderr) or
-    'Recreating' in (compose_up.stdout + compose_up.stderr) or
-    'Starting' in (compose_up.stdout + compose_up.stderr)
+    - name: Start loki stack
+      ansible.builtin.command: docker compose up -d
+      args:
+        chdir: /opt/observability/loki
+      register: compose_up
+      changed_when: >
+        'Creating' in (compose_up.stdout + compose_up.stderr) or
+        'Recreating' in (compose_up.stdout + compose_up.stderr) or
+        'Starting' in (compose_up.stdout + compose_up.stderr)
