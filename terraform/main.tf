@@ -84,7 +84,7 @@ resource "azurerm_network_security_group" "main" {
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
-    destination_port_range     = ["9090","3000","3100","9100"]
+    destination_port_ranges    = ["9090","3000","3100","9100"]
     source_address_prefix      = "10.8.0.0/24"
     destination_address_prefix = "*"
   }
