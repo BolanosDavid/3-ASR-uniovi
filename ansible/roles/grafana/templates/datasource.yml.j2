@@ -4,6 +4,6 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://{{ wg_ip_map[prometheus_host] }}:9090
+    url: http://{{ hostvars[prometheus_host]['wg_overlay_ip'] }}:9090
     isDefault: true
     editable: false

@@ -6,7 +6,7 @@ PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 ANSIBLE_DIR="$PROJECT_ROOT/ansible"
 INVENTORY_FILE="$ANSIBLE_DIR/inventories/generated/inventory.ini"
 
-RAW_PRIVATE_KEY_FILE="${ANSIBLE_PRIVATE_KEY_FILE:-$HOME/.ssh/id_rsa}"
+RAW_PRIVATE_KEY_FILE="${ANSIBLE_PRIVATE_KEY_FILE:-$HOME/.ssh/asr_azure_rsa}"
 
 case "$RAW_PRIVATE_KEY_FILE" in
   "~/"*)
