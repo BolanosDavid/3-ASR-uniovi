@@ -1,4 +1,4 @@
 [webservers]
-asr-vm01 ansible_host=X.X.X.X ansible_user=azureuser
-asr-vm02 ansible_host=Y.Y.Y.Y ansible_user=azureuser
-asr-vm03 ansible_host=Z.Z.Z.Z ansible_user=azureuser
+asr-vm01 ansible_host=X.X.X.X ansible_user=azureuser wg_overlay_ip=10.8.0.1
+asr-vm02 ansible_host=Y.Y.Y.Y ansible_user=azureuser wg_overlay_ip=10.8.0.2
+asr-vm03 ansible_host=Z.Z.Z.Z ansible_user=azureuser wg_overlay_ip=10.8.0.3
