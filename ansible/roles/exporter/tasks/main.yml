@@ -22,5 +22,8 @@
   ansible.builtin.command: docker compose up -d
   args:
     chdir: /opt/observability/exporter
-  register: exporter_compose_up
-  changed_when: "'Creating' in exporter_compose_up.stdout or 'Recreating' in exporter_compose_up.stdout or 'Starting' in exporter_compose_up.stdout"
+  register: compose_up
+  changed_when: >
+    'Creating' in (compose_up.stdout + compose_up.stderr) or
+    'Recreating' in (compose_up.stdout + compose_up.stderr) or
+    'Starting' in (compose_up.stdout + compose_up.stderr)

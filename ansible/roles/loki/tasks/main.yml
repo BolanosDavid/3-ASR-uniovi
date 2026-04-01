@@ -40,4 +40,4 @@
   changed_when: >
     'Creating' in (compose_up.stdout + compose_up.stderr) or
     'Recreating' in (compose_up.stdout + compose_up.stderr) or
-    'Starting' in (compose_up.stdout + compose_up.stderr)anged_when: "'Creating' in loki_compose_up.stdout or 'Recreating' in loki_compose_up.stdout or 'Starting' in loki_compose_up.stdout"
+    'Starting' in (compose_up.stdout + compose_up.stderr)
