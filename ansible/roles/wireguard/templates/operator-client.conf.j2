@@ -1,0 +1,12 @@
+[Interface]
+PrivateKey = {{ wireguard_operator_client_private_key }}
+Address = {{ wireguard_operator_client_overlay_ip }}/32
+
+{% for peer in groups['webservers'] | sort %}
+    [Peer]
+    PublicKey = {{ hostvars[peer].wireguard_public_key }}
+    Endpoint = {{ hostvars[peer].ansible_host }}:{{ wireguard_port }}
+    AllowedIPs = {{ wireguard_network_cidr }}
+    PersistentKeepalive = 25
+
+{% endfor %}

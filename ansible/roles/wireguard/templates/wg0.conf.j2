@@ -11,3 +11,11 @@ PrivateKey = {{ wireguard_private_key }}
     PersistentKeepalive = 25
 
 {% endfor %}
+
+{% if wireguard_operator_client_enabled | default(false) %}
+    [Peer]
+    PublicKey = {{ wireguard_operator_client_public_key }}
+    AllowedIPs = {{ wireguard_operator_client_overlay_ip }}/32
+    PersistentKeepalive = 25
+
+{% endif %}

@@ -7,6 +7,7 @@ ANSIBLE_DIR="$PROJECT_ROOT/ansible"
 INVENTORY_FILE="$ANSIBLE_DIR/inventories/generated/inventory.ini"
 
 RAW_PRIVATE_KEY_FILE="${ANSIBLE_PRIVATE_KEY_FILE:-$HOME/.ssh/asr_azure_rsa}"
+ANSIBLE_EXTRA_VARS_FILE="${ANSIBLE_EXTRA_VARS_FILE:-}"
 
 case "$RAW_PRIVATE_KEY_FILE" in
   "~/"*)
@@ -28,6 +29,11 @@ if [ ! -f "$PRIVATE_KEY_FILE" ]; then
     exit 1
 fi
 
+if [ -n "$ANSIBLE_EXTRA_VARS_FILE" ] && [ ! -f "$ANSIBLE_EXTRA_VARS_FILE" ]; then
+    echo "ERROR: Extra vars file not found at $ANSIBLE_EXTRA_VARS_FILE"
+    exit 1
+fi
+
 chmod 600 "$PRIVATE_KEY_FILE" 2>/dev/null || true
 
 export ANSIBLE_CONFIG="$ANSIBLE_DIR/ansible.cfg"
@@ -38,7 +44,13 @@ echo "==> Running Ansible playbook..."
 echo "==> Using inventory: $INVENTORY_FILE"
 echo "==> Using private key: $PRIVATE_KEY_FILE"
 
-ansible-playbook -i "$INVENTORY_FILE" --private-key "$PRIVATE_KEY_FILE" playbooks/site.yml
+if [ -n "$ANSIBLE_EXTRA_VARS_FILE" ]; then
+  echo "==> Using extra vars file: $ANSIBLE_EXTRA_VARS_FILE"
+  ansible-playbook -i "$INVENTORY_FILE" --private-key "$PRIVATE_KEY_FILE" \
+    --extra-vars "@$ANSIBLE_EXTRA_VARS_FILE" playbooks/site.yml
+else
+  ansible-playbook -i "$INVENTORY_FILE" --private-key "$PRIVATE_KEY_FILE" playbooks/site.yml
+fi
 
 echo ""
 echo "✓ Configuration applied successfully"

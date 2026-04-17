@@ -1,4 +1,16 @@
 ---
+- name: Validate operator WireGuard client vars when enabled
+  ansible.builtin.assert:
+    that:
+      - wireguard_operator_client_public_key | length > 0
+      - wireguard_operator_client_private_key | length > 0
+      - wireguard_operator_client_overlay_ip | length > 0
+      - wireguard_operator_client_output_dir | length > 0
+    fail_msg: >
+      wireguard_operator_client_enabled=true pero faltan variables del cliente local.
+      Reejecuta deploy-all.sh para regenerarlas automáticamente.
+  when: wireguard_operator_client_enabled | default(false)
+
 - name: Install WireGuard packages
   ansible.builtin.apt:
     name:
@@ -82,3 +94,33 @@
     name: wg-quick@wg0
     state: started
     enabled: true
+
+- name: Ensure local output directory for operator client exists
+  ansible.builtin.file:
+    path: "{{ wireguard_operator_client_output_dir }}"
+    state: directory
+    mode: '0700'
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when: wireguard_operator_client_enabled | default(false)
+
+- name: Generate operator WireGuard client config locally
+  ansible.builtin.template:
+    src: operator-client.conf.j2
+    dest: "{{ wireguard_operator_client_output_dir }}/{{ wireguard_operator_client_name }}.conf"
+    mode: '0600'
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when: wireguard_operator_client_enabled | default(false)
+
+- name: Print operator WireGuard client config path
+  ansible.builtin.debug:
+    msg: >
+      WireGuard client config generated at
+      {{ wireguard_operator_client_output_dir }}/{{ wireguard_operator_client_name }}.conf
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when: wireguard_operator_client_enabled | default(false)

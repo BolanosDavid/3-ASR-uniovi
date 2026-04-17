@@ -53,6 +53,7 @@ Antes de ejecutar el proyecto, asegúrate de tener instalado lo siguiente:
 - **timeout**
 - **ssh-keygen**
 - Sistema Linux o entorno compatible (por ejemplo, **WSL**)
+- **wireguard-tools** (`wg`) instalado en la máquina desde la que lanzas el despliegue
 
 ## Estructura general de ejecución
 
@@ -95,12 +96,14 @@ Este script realiza automáticamente todo el flujo:
 
 1. Comprueba dependencias.
 2. Genera una clave SSH RSA dedicada para el proyecto si no existe.
-3. Actualiza `ssh_public_key_path` en `terraform.tfvars`.
-4. Inicializa y aplica Terraform.
-5. Genera el inventario de Ansible con las IPs WireGuard asignadas por orden de nombre.
-6. Espera a que las máquinas virtuales acepten conexiones SSH.
-7. Ejecuta el playbook principal de Ansible.
-8. Verifica el despliegue final por HTTP.
+3. Genera automáticamente un cliente local de WireGuard para el operador si no existe.
+4. Actualiza `ssh_public_key_path` en `terraform.tfvars`.
+5. Inicializa y aplica Terraform.
+6. Genera el inventario de Ansible con las IPs WireGuard asignadas por orden de nombre.
+7. Espera a que las máquinas virtuales acepten conexiones SSH.
+8. Ejecuta el playbook principal de Ansible, añadiendo al operador como peer de WireGuard.
+9. Genera el fichero cliente WireGuard listo para importar.
+10. Verifica el despliegue final por HTTP.
 
 ## Claves SSH
 
@@ -141,7 +144,27 @@ Los servicios de observabilidad son accesibles únicamente desde la red overlay 
 - **Grafana**: `http://10.8.0.1:3000`
 - **Prometheus**: `http://10.8.0.1:9090`
 - **Loki**: `http://10.8.0.3:3100`
+## Acceso del operador a Grafana vía VPN
 
+El script `./scripts/deploy-all.sh` genera automáticamente un cliente WireGuard local para el operador y lo añade como peer en todos los nodos.
+
+Al finalizar, se genera un fichero de configuración listo para importar en:
+
+```bash
+ansible/inventories/generated/wireguard-client/operator.conf
+```
+Pasos: 
+1. Ejecuta el despliegue (recuerda darle permisos de ejecución a los scripts):  
+
+```bash
+./scripts/deploy-all.sh
+```
+2. Importa el fichero operator.conf en tu cliente WireGuard.
+3. Conecta la VPN.
+4. Accede a Grafana en:
+```bash
+http://10.8.0.1:3000
+```
 ## Verificación del despliegue
 
 Si quieres repetir solo la comprobación final:
